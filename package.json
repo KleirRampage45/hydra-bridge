@@ -1,0 +1,46 @@
+{
+  "name": "hydra-bridge",
+  "version": "1.0.0",
+  "description": "MCP bridge for Hydra Launcher — 46 tools to search, download, configure, and manage games programmatically",
+  "main": "dist/index.js",
+  "bin": {
+    "hydra-bridge": "./dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["hydra", "mcp", "electron", "cdp", "steam", "gaming", "model-context-protocol"],
+  "author": "KleirRampage45",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KleirRampage45/hydra-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KleirRampage45/hydra-bridge/issues"
+  },
+  "homepage": "https://github.com/KleirRampage45/hydra-bridge#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/node": "^25.9.2",
+    "chrome-remote-interface": "^0.34.0",
+    "level": "^10.0.0",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@types/chrome-remote-interface": "^0.34.0",
+    "ts-node": "^10.9.2"
+  }
+}

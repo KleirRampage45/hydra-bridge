@@ -1,0 +1,23 @@
+# Build output
+dist/
+*.js.map
+
+# Dependencies
+node_modules/
+
+# Hydra source (used for development/reference, not needed at runtime)
+source/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
