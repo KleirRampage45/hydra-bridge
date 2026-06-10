@@ -4,6 +4,7 @@ import { sleep } from './util';
 
 const HYDRA_BIN = '/opt/Hydra/hydralauncher';
 const CDP_PORT = 9222;
+const IDLE_KILL_TTL_MS = 5 * 60 * 1000; // 5 minutes idle before killing spawned Hydra
 
 export interface HydraCDPClient {
   evaluate: (expression: string) => Promise<any>;
@@ -11,9 +12,33 @@ export interface HydraCDPClient {
   isConnected: () => boolean;
 }
 
+let spawnedProcess: ChildProcess | null = null;
+let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+function resetIdleTimer() {
+  if (idleTimer) clearTimeout(idleTimer);
+  if (spawnedProcess) {
+    idleTimer = setTimeout(() => {
+      console.log('[HydraCDP] Idle TTL expired — killing spawned Hydra');
+      killSpawnedProcess();
+    }, IDLE_KILL_TTL_MS);
+  }
+}
+
+function killSpawnedProcess() {
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+  if (spawnedProcess) {
+    try { spawnedProcess.kill('SIGTERM'); } catch {}
+    setTimeout(() => {
+      try { if (spawnedProcess?.exitCode === null) spawnedProcess?.kill('SIGKILL'); } catch {}
+      spawnedProcess = null;
+    }, 3000);
+  }
+}
+
 export async function connectToHydra(): Promise<HydraCDPClient> {
   let client: any = null;
-  let hydraProcess: ChildProcess | null = null;
+  let weStartedHydra = false;
 
   // Check if Hydra is already running with CDP
   try {
@@ -23,7 +48,7 @@ export async function connectToHydra(): Promise<HydraCDPClient> {
     }
   } catch {
     console.log('[HydraCDP] No existing CDP — starting Hydra...');
-    hydraProcess = spawn(HYDRA_BIN, [
+    spawnedProcess = spawn(HYDRA_BIN, [
       `--remote-debugging-port=${CDP_PORT}`,
       '--no-sandbox',
       '--disable-gpu',
@@ -32,7 +57,8 @@ export async function connectToHydra(): Promise<HydraCDPClient> {
       stdio: 'ignore',
       env: { ...process.env, DISPLAY: ':0' },
     });
-    hydraProcess.unref();
+    spawnedProcess.unref();
+    weStartedHydra = true;
 
     // Wait for CDP to come up
     let retries = 30;
@@ -44,7 +70,10 @@ export async function connectToHydra(): Promise<HydraCDPClient> {
         await sleep(1000);
       }
     }
-    if (retries <= 0) throw new Error('Hydra failed to start CDP within 30s');
+    if (retries <= 0) {
+      killSpawnedProcess();
+      throw new Error('Hydra failed to start CDP within 30s');
+    }
   }
 
   // Get the first page (main Hydra window)
@@ -76,6 +105,7 @@ export async function connectToHydra(): Promise<HydraCDPClient> {
 
   return {
     evaluate: async (expression: string) => {
+      resetIdleTimer();
       const result = await client.Runtime.evaluate({
         expression,
         awaitPromise: true,
@@ -89,7 +119,9 @@ export async function connectToHydra(): Promise<HydraCDPClient> {
       return result.result?.value;
     },
     close: async () => {
+      if (idleTimer) clearTimeout(idleTimer);
       if (client) await client.close();
+      killSpawnedProcess();
     },
     isConnected: () => !!client,
   };
