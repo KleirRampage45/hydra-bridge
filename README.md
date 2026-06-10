@@ -6,7 +6,7 @@
 npx hydra-bridge
 ```
 
-Works with **Claude Desktop**, **Claude Code**, **OpenCode**, **Cursor**, **VS Code**, **Cline / Roo Code**, **Continue.dev**, and any MCP-compatible agent.
+Works with **Claude Desktop**, **Claude Code**, **OpenCode**, **OpenClaw**, **Hermes Agent**, **Cursor**, **VS Code**, **Cline / Roo Code**, **Continue.dev**, and any MCP-compatible agent.
 
 ---
 
@@ -102,6 +102,37 @@ In `~/.config/opencode/opencode.json`:
     }
   }
 }
+```
+
+### OpenClaw
+
+```bash
+openclaw mcp add hydra-bridge \
+  --command npx \
+  --arg hydra-bridge
+```
+
+Verify it's working:
+
+```bash
+openclaw mcp probe hydra-bridge --json
+```
+
+### Hermes Agent
+
+In `~/.hermes/config.yaml`:
+
+```yaml
+mcpServers:
+  hydra-bridge:
+    command: npx
+    args: ["hydra-bridge"]
+```
+
+Restart the gateway:
+
+```bash
+systemctl --user restart hermes-gateway
 ```
 
 ### Cursor
